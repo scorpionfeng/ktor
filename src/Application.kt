@@ -3,6 +3,7 @@ package com.phoenix
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
@@ -67,6 +68,9 @@ fun Application.module() {
     install(StatusPages) {
         exception<InvalidCredentialsException> { exception ->
             call.respond(HttpStatusCode.Unauthorized, mapOf("OK" to false, "error" to (exception.message ?: "")))
+        }
+        exception<MissingKotlinParameterException>{ exception->
+            call.respond(HttpStatusCode.BadRequest, mapOf("status" to false,"error" to (exception.message?:"")))
         }
     }
     install(Authentication) {
