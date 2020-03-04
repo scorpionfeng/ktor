@@ -18,6 +18,8 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
+import io.ktor.locations.Location
+import io.ktor.locations.Locations
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.get
@@ -28,9 +30,30 @@ import java.util.*
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
+@Location("/account")
+class Account{
+    @Location("/login")
+    data class login(val name:String)
+
+
+    @Location("/register")
+    data class register(val username: String, val password: String)
+}
+
+
+
 fun Application.module() {
+
+
+
+
     val simpleJwt = SimpleJWT("my-super-secret-for-jwt")
+
+    install(Locations)
+
     install(CORS) {
+
+
         method(HttpMethod.Options)
         method(HttpMethod.Get)
         method(HttpMethod.Post)
@@ -60,6 +83,9 @@ fun Application.module() {
         }
     }
     routing {
+
+        account()
+
         post("/login-register") {
             val post = call.receive<LoginRegister>()
             val user = users.getOrPut(post.user) { User(post.user, post.password) }
