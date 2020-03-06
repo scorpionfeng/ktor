@@ -22,7 +22,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
 import io.ktor.locations.Location
 import io.ktor.locations.Locations
-import io.ktor.locations.url
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.get
@@ -50,6 +49,8 @@ class Account{
 @Location("/uploadpage")
 class Upload
 
+@Location("/download")
+class DownLoad
 
 const val JDBC_DRIVER = "com.mysql.jdbc.Driver"
 const val DB_URL = "jdbc:mysql://localhost:3306/ktor?useUnicode=true&characterEncoding=UTF-8"
@@ -61,7 +62,7 @@ const val DB_PASSWORD = ""
 fun Application.module() {
 
 
-    val uploadDirPath: String = "/Users/xtool/adas/upload"
+    val uploadDirPath: String = "/Users/phoenix/proj/upload"
     val uploadDir = File(uploadDirPath)
     if (!uploadDir.mkdirs() && !uploadDir.exists()) {
         throw IOException("Failed to create directory ${uploadDir.absolutePath}")
@@ -109,6 +110,7 @@ fun Application.module() {
 
         account()
         upload(uploadDir)
+        download()
 
         post("/login-register") {
             val post = call.receive<LoginRegister>()
