@@ -15,18 +15,23 @@ import io.ktor.auth.principal
 import io.ktor.features.CORS
 import io.ktor.features.ContentNegotiation
 import io.ktor.features.StatusPages
+import io.ktor.html.respondHtml
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
 import io.ktor.locations.Location
 import io.ktor.locations.Locations
+import io.ktor.locations.url
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.route
 import io.ktor.routing.routing
+import kotlinx.html.*
+import java.io.File
+import java.io.IOException
 import java.util.*
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
@@ -41,12 +46,26 @@ class Account{
     data class register(val username: String, val password: String)
 }
 
+/** 上传页面 **/
+@Location("/uploadpage")
+class Upload
+
+
+const val JDBC_DRIVER = "com.mysql.jdbc.Driver"
+const val DB_URL = "jdbc:mysql://localhost:3306/ktor?useUnicode=true&characterEncoding=UTF-8"
+const val DB_USER = "root"
+const val DB_PASSWORD = ""
+
 
 
 fun Application.module() {
 
 
-
+    val uploadDirPath: String = "/Users/xtool/adas/upload"
+    val uploadDir = File(uploadDirPath)
+    if (!uploadDir.mkdirs() && !uploadDir.exists()) {
+        throw IOException("Failed to create directory ${uploadDir.absolutePath}")
+    }
 
     val simpleJwt = SimpleJWT("my-super-secret-for-jwt")
 
@@ -89,6 +108,7 @@ fun Application.module() {
     routing {
 
         account()
+        upload(uploadDir)
 
         post("/login-register") {
             val post = call.receive<LoginRegister>()
@@ -100,6 +120,8 @@ fun Application.module() {
             get {
                 call.respond(mapOf("snippets" to synchronized(snippets) { snippets.toList() }))
             }
+
+
             authenticate {
                 post {
                     val post = call.receive<PostSnippet>()
@@ -109,8 +131,48 @@ fun Application.module() {
                 }
             }
         }
+
+        get("/index") {
+            call.respondHtml {
+
+                head {
+                    title {
+                        +"Ktor 入门"
+                    }
+                }
+                body {
+
+                    form {  }
+                    a {
+                        href = "http://127.0.0.1:8080/register"
+                        +"注册"
+                    }
+
+                    form {
+                        action = "http://127.0.0.1：8080/user/login"
+                        method=FormMethod.post
+                        input {
+                            type = InputType.text
+                            value = ""
+                            name="username"
+                        }
+                        input {
+                            type = InputType.password
+                            value = ""
+                            name="password"
+                        }
+                        input {
+                            type = InputType.submit
+                            value = "登录"
+                        }
+                    }
+                }
+            }
+        }
     }
 }
+
+
 
 data class PostSnippet(val snippet: PostSnippet.Text) {
     data class Text(val text: String)
