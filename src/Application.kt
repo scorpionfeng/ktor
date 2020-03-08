@@ -40,6 +40,9 @@ class DataResult{
     @Location("/find")
     data class Find(val id:Int)
 
+    @Location("/select")
+    data class Select(val page:Int=1)
+
     @Location("/save")
     data class Save(val par:String="")
 }

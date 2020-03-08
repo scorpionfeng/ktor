@@ -40,6 +40,7 @@ dependencies {
     implementation "io.ktor:ktor-auth-jwt:$ktor_version"
     implementation "io.ktor:ktor-locations:$ktor_version"
     implementation "me.liuwj.ktorm:ktorm-core:2.7.2"
+    implementation "me.liuwj.ktorm:ktorm-support-mysql:2.7.2"
     implementation "mysql:mysql-connector-java:5.1.21"
     implementation "io.ktor:ktor-html-builder:$ktor_version"
     testImplementation "io.ktor:ktor-server-tests:$ktor_version"

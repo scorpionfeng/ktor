@@ -6,6 +6,9 @@ import io.ktor.response.respond
 import io.ktor.routing.Route
 import me.liuwj.ktorm.database.Database
 import me.liuwj.ktorm.dsl.eq
+import me.liuwj.ktorm.dsl.from
+import me.liuwj.ktorm.dsl.limit
+import me.liuwj.ktorm.dsl.select
 import me.liuwj.ktorm.entity.Entity
 import me.liuwj.ktorm.entity.add
 import me.liuwj.ktorm.entity.find
@@ -58,6 +61,14 @@ fun Route.databasex(){
         val sequence = database.sequenceOf(Employees)
         val employee = sequence.find { it.id eq 1}
         call.respond(mapOf("name" to employee?.name))
+    }
+
+    //databasex/select?page=1
+    get<DataResult.Select>{
+        form->
+            val seq = database.from(Employees)
+            val employee = seq.select().limit((form.page-1)*10,10).toList()
+            call.respond(mapOf("size" to employee.size))
     }
 
     ///databasex/save?par=1
