@@ -35,6 +35,16 @@ import java.util.*
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
+@Location("/databasex")
+class DataResult{
+    @Location("/find")
+    data class Find(val id:Int)
+
+    @Location("/save")
+    data class Save(val par:String="")
+}
+
+
 @Location("/account")
 class Account{
     @Location("/login")
@@ -59,7 +69,10 @@ const val DB_PASSWORD = ""
 
 
 
+
 fun Application.module() {
+
+
 
 
     val uploadDirPath: String = "/Users/phoenix/proj/upload"
@@ -111,6 +124,7 @@ fun Application.module() {
         account()
         upload(uploadDir)
         download()
+        databasex()
 
         post("/login-register") {
             val post = call.receive<LoginRegister>()
