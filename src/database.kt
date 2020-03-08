@@ -68,7 +68,8 @@ fun Route.databasex(){
         form->
             val seq = database.from(Employees)
             val employee = seq.select().limit((form.page-1)*10,10).toList()
-            call.respond(mapOf("size" to employee.size))
+//            call.respond(mapOf("size" to employee.size))
+        call.respond(Resp(employee.size))
     }
 
     ///databasex/save?par=1
