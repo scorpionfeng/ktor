@@ -4,10 +4,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
-import de.nielsfalk.ktor.swagger.SwaggerSupport
-import de.nielsfalk.ktor.swagger.example
-import de.nielsfalk.ktor.swagger.ok
-import de.nielsfalk.ktor.swagger.responds
+import de.nielsfalk.ktor.swagger.*
 import de.nielsfalk.ktor.swagger.version.shared.Contact
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import de.nielsfalk.ktor.swagger.version.shared.Information
@@ -28,13 +25,13 @@ import io.ktor.html.respondHtml
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.HttpStatusCode.Companion.Created
 import io.ktor.jackson.jackson
 import io.ktor.locations.Location
 import io.ktor.locations.Locations
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.get
-import de.nielsfalk.ktor.swagger.get
 import io.ktor.routing.post
 import io.ktor.routing.route
 import io.ktor.routing.routing
@@ -42,6 +39,7 @@ import kotlinx.html.*
 import java.io.File
 import java.io.IOException
 import java.util.*
+import kotlin.collections.set
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
@@ -103,10 +101,17 @@ fun rectangleSchemaMap(refBase: String) = mapOf(
 @Location("/pets")
 class Pets
 
+@Group("pet operations")
+@Location("/pets/{id}")
+class pet(val id: Int)
 
 @Group("cats")
 @Location("/cats")
 class Cats
+
+@Group("/dogs")
+@Location("/dogs")
+class Dogs
 
 data class PetsModel(val pets: MutableList<PetModel>) {
     companion object {
@@ -123,12 +128,12 @@ data class PetModel(val id: Int?, val name: String) {
     companion object {
         val exampleSpike = mapOf(
             "id" to 1,
-            "name" to "Spike"
+            "name" to "Spikex"
         )
 
         val exampleRover = mapOf(
             "id" to 2,
-            "name" to "Rover"
+            "name" to "Roverx"
         )
     }
 }
@@ -140,12 +145,14 @@ val data = PetsModel(
     )
 )
 
+fun newId() = ((data.pets.map { it.id ?: 0 }.max()) ?: 0) + 1
+
 fun Application.module() {
 
 
 
 
-    val uploadDirPath: String = "/Users/xtool/adas/upload"
+    val uploadDirPath: String = "/Users/phoenix/proj/upload"
     val uploadDir = File(uploadDirPath)
     if (!uploadDir.mkdirs() && !uploadDir.exists()) {
         throw IOException("Failed to create directory ${uploadDir.absolutePath}")
@@ -230,6 +237,55 @@ fun Application.module() {
 
         }
 
+        get<Dogs>("dogs".responds()){
+            call.respond(mapOf("succ" to true))
+
+        }
+
+        post<Pets, PetModel>(
+            "create"
+                .description("Save a pet in our wonderful database!")
+                .examples(
+                    example("rover", PetModel.exampleRover, summary = "Rover is one possible pet."),
+                    example("spike", PetModel.exampleSpike, summary = "Spike is a different posssible pet.")
+                )
+                .responds(
+                    created<PetModel>(
+                        example("rover", PetModel.exampleRover),
+                        example("spike", PetModel.exampleSpike)
+                    ),
+                    ok<PetModel>(
+                        example("rover", PetModel.exampleRover),
+                        example("spike", PetModel.exampleSpike)
+                    )
+                )
+        ) { _, entity ->
+            call.respond(Created, entity.copy(id = newId()).apply {
+                data.pets.add(this)
+            })
+        }
+
+        get<pet>(
+            "find".responds(
+                ok<PetModel>(),
+                notFound()
+            )
+        ) { params ->
+            data.pets.find { it.id == params.id }
+                ?.let {
+                    call.respond(it)
+                }
+        }
+
+        put<pet, PetModel>(
+            "update"
+                .responds(
+                ok<PetModel>( example("rover", PetModel.exampleRover)),
+                notFound()
+            )
+        ) { params, entity ->
+                call.respond(entity)
+        }
 
 
         post("/login-register") {
