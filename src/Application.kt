@@ -4,6 +4,15 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
+import de.nielsfalk.ktor.swagger.SwaggerSupport
+import de.nielsfalk.ktor.swagger.example
+import de.nielsfalk.ktor.swagger.ok
+import de.nielsfalk.ktor.swagger.responds
+import de.nielsfalk.ktor.swagger.version.shared.Contact
+import de.nielsfalk.ktor.swagger.version.shared.Group
+import de.nielsfalk.ktor.swagger.version.shared.Information
+import de.nielsfalk.ktor.swagger.version.v2.Swagger
+import de.nielsfalk.ktor.swagger.version.v3.OpenApi
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
@@ -25,6 +34,7 @@ import io.ktor.locations.Locations
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.get
+import de.nielsfalk.ktor.swagger.get
 import io.ktor.routing.post
 import io.ktor.routing.route
 import io.ktor.routing.routing
@@ -57,7 +67,7 @@ class Account{
     @Location("/register")
     data class register(val username: String, val password: String)
 }
-
+const val petUuid = "petUuid"
 /** 上传页面 **/
 @Location("/uploadpage")
 class Upload
@@ -70,15 +80,67 @@ const val DB_URL = "jdbc:mysql://localhost:3306/ktor?useUnicode=true&characterEn
 const val DB_USER = "root"
 const val DB_PASSWORD = ""
 
+val sizeSchemaMap = mapOf(
+    "type" to "number",
+    "minimum" to 0
+)
+
+val petIdSchema = mapOf(
+    "type" to "string",
+    "format" to "date",
+    "description" to "The identifier of the pet to be accessed"
+)
+fun rectangleSchemaMap(refBase: String) = mapOf(
+    "type" to "object",
+    "properties" to mapOf(
+        "a" to mapOf("${'$'}ref" to "$refBase/size"),
+        "b" to mapOf("${'$'}ref" to "$refBase/size")
+    )
+)
 
 
+@Group("pet operations")
+@Location("/pets")
+class pets
+
+data class PetsModel(val pets: MutableList<PetModel>) {
+    companion object {
+        val exampleModel = mapOf(
+            "pets" to listOf(
+                PetModel.exampleSpike,
+                PetModel.exampleRover
+            )
+        )
+    }
+}
+
+data class PetModel(val id: Int?, val name: String) {
+    companion object {
+        val exampleSpike = mapOf(
+            "id" to 1,
+            "name" to "Spike"
+        )
+
+        val exampleRover = mapOf(
+            "id" to 2,
+            "name" to "Rover"
+        )
+    }
+}
+
+val data = PetsModel(
+    mutableListOf(
+        PetModel(1, "max"),
+        PetModel(2, "moritz")
+    )
+)
 
 fun Application.module() {
 
 
 
 
-    val uploadDirPath: String = "/Users/phoenix/proj/upload"
+    val uploadDirPath: String = "/Users/xtool/adas/upload"
     val uploadDir = File(uploadDirPath)
     if (!uploadDir.mkdirs() && !uploadDir.exists()) {
         throw IOException("Failed to create directory ${uploadDir.absolutePath}")
@@ -87,6 +149,31 @@ fun Application.module() {
     val simpleJwt = SimpleJWT("my-super-secret-for-jwt")
 
     install(Locations)
+
+    install(SwaggerSupport){
+        forwardRoot = true
+        val information = Information(
+            version = "0.1",
+            title = "sample api implemented in ktor",
+            description = "This is a sample ",
+            contact = Contact(
+                name = "Phoenix",
+                url = "https://www.xxx.com"
+            )
+        )
+        swagger = Swagger().apply {
+            info = information
+            definitions["size"] = sizeSchemaMap
+            definitions[petUuid] = petIdSchema
+            definitions["Rectangle"] = rectangleSchemaMap("#/definitions")
+        }
+        openApi = OpenApi().apply {
+            info = information
+            components.schemas["size"] = sizeSchemaMap
+            components.schemas[petUuid] = petIdSchema
+            components.schemas["Rectangle"] = rectangleSchemaMap("#/components/schemas")
+        }
+    }
 
     install(CORS) {
 
@@ -128,6 +215,10 @@ fun Application.module() {
         upload(uploadDir)
         download()
         databasex()
+
+        get<pets>("all".responds(ok<PetsModel>(example("model", PetsModel.exampleModel)))) {
+            call.respond(data)
+        }
 
         post("/login-register") {
             val post = call.receive<LoginRegister>()
