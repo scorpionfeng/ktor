@@ -101,7 +101,12 @@ fun rectangleSchemaMap(refBase: String) = mapOf(
 
 @Group("pet operations")
 @Location("/pets")
-class pets
+class Pets
+
+
+@Group("cats")
+@Location("/cats")
+class Cats
 
 data class PetsModel(val pets: MutableList<PetModel>) {
     companion object {
@@ -216,9 +221,16 @@ fun Application.module() {
         download()
         databasex()
 
-        get<pets>("all".responds(ok<PetsModel>(example("model", PetsModel.exampleModel)))) {
+        get<Pets>("all".responds(ok<PetsModel>(example("model", PetsModel.exampleModel)))) {
             call.respond(data)
         }
+
+        get<Cats>("allc".responds()){
+            call.respond(mapOf("succ" to true))
+
+        }
+
+
 
         post("/login-register") {
             val post = call.receive<LoginRegister>()
