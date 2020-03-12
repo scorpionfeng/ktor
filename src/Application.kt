@@ -18,6 +18,7 @@ import io.ktor.auth.UserIdPrincipal
 import io.ktor.auth.authenticate
 import io.ktor.auth.jwt.jwt
 import io.ktor.auth.principal
+import io.ktor.gson.gson
 import io.ktor.features.CORS
 import io.ktor.features.ContentNegotiation
 import io.ktor.features.StatusPages
@@ -152,13 +153,14 @@ fun Application.module() {
 
 
 
-    val uploadDirPath: String = "/Users/phoenix/proj/upload"
+    val uploadDirPath: String = "/Users/xtool/adas/upload"
     val uploadDir = File(uploadDirPath)
     if (!uploadDir.mkdirs() && !uploadDir.exists()) {
         throw IOException("Failed to create directory ${uploadDir.absolutePath}")
     }
 
     val simpleJwt = SimpleJWT("my-super-secret-for-jwt")
+
 
     install(Locations)
 
@@ -217,8 +219,8 @@ fun Application.module() {
         }
     }
     install(ContentNegotiation) {
-        jackson {
-            enable(SerializationFeature.INDENT_OUTPUT) // Pretty Prints the JSON
+        gson {
+            setPrettyPrinting()
         }
     }
     routing {
@@ -278,13 +280,15 @@ fun Application.module() {
         }
 
         put<pet, PetModel>(
-            "update"
-                .responds(
-                ok<PetModel>( example("rover", PetModel.exampleRover)),
+            "update".responds(
+                ok<PetModel>(),
                 notFound()
             )
         ) { params, entity ->
+            if (data.pets.removeIf { it.id == params.id && it.id == entity.id }) {
+                data.pets.add(entity)
                 call.respond(entity)
+            }
         }
 
 
